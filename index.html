@@ -192,8 +192,8 @@
         <h2>Patient Records</h2>
 
         <p>
-            These records are temporary and disappear when
-            the page is refreshed.
+            Patient records are saved in browser localStorage
+            and remain available after refreshing the page.
         </p>
 
         <div class="table-container">
@@ -223,51 +223,169 @@
 
     <script>
 
+        // Get HTML elements
+
         const form = document.getElementById("patientForm");
 
         const records = document.getElementById("records");
 
         const message = document.getElementById("message");
 
+
+        // Retrieve saved patient records from localStorage
+
+        let patientRecords = [];
+
+        try {
+
+            patientRecords = JSON.parse(
+                localStorage.getItem("patients") || "[]"
+            );
+
+            if (!Array.isArray(patientRecords)) {
+                patientRecords = [];
+            }
+
+        } catch (error) {
+
+            patientRecords = [];
+
+            message.textContent = "Unable to read saved records.";
+
+        }
+
+
+        // Function to save patient records
+
+        function saveRecords() {
+
+            try {
+
+                localStorage.setItem(
+                    "patients",
+                    JSON.stringify(patientRecords)
+                );
+
+                return true;
+
+            } catch (error) {
+
+                message.textContent =
+                    "Unable to save records in browser storage.";
+
+                return false;
+
+            }
+
+        }
+
+
+        // Function to display patient records
+
+        function displayRecords() {
+
+            records.innerHTML = "";
+
+            patientRecords.forEach(function (patient) {
+
+                const row = document.createElement("tr");
+
+                const values = [
+                    patient.id,
+                    patient.name,
+                    patient.age,
+                    patient.notes
+                ];
+
+                values.forEach(function (value) {
+
+                    const cell = document.createElement("td");
+
+                    cell.textContent = value;
+
+                    row.appendChild(cell);
+
+                });
+
+                records.appendChild(row);
+
+            });
+
+        }
+
+
+        // Display previously saved records when page loads
+
+        displayRecords();
+
+
+        // Handle patient form submission
+
         form.addEventListener("submit", function (event) {
 
             event.preventDefault();
 
-            const values = [
 
-                document.getElementById("patientId").value.trim(),
+            // Get patient information
 
-                document.getElementById("patientName").value.trim(),
+            const patient = {
 
-                document.getElementById("age").value,
+                id: document.getElementById("patientId").value.trim(),
 
-                document.getElementById("notes").value.trim()
+                name: document.getElementById("patientName").value.trim(),
 
-            ];
+                age: document.getElementById("age").value,
 
-            if (values.some(value => value === "")) {
+                notes: document.getElementById("notes").value.trim()
 
-                message.textContent = "Please complete every field.";
+            };
+
+
+            // Check whether all fields are completed
+
+            if (
+                patient.id === "" ||
+                patient.name === "" ||
+                patient.age === "" ||
+                patient.notes === ""
+            ) {
+
+                message.textContent =
+                    "Please complete every field.";
 
                 return;
 
             }
 
-            const row = document.createElement("tr");
 
-            values.forEach(function (value) {
+            // Add patient to the array
 
-                const cell = document.createElement("td");
+            patientRecords.push(patient);
 
-                cell.textContent = value;
 
-                row.appendChild(cell);
+            // Save records in localStorage
 
-            });
+            if (!saveRecords()) {
 
-            records.appendChild(row);
+                patientRecords.pop();
 
-            message.textContent = "Patient record added successfully.";
+                return;
+
+            }
+
+
+            // Update the patient table
+
+            displayRecords();
+
+
+            // Display success message
+
+            message.textContent =
+                "Patient record added successfully.";
+
+
+            // Clear the form
 
             form.reset();
 
